@@ -29,29 +29,22 @@ public class WalletSecretFunction {
     private String dbPassword;
     private SecretsClient secretsClient;
 
-    private final Map<String, String> walletFiles = Map.of(
-            "cwallet.sso",  System.getenv().get("CWALLET_ID"),
-            "ewallet.p12",  System.getenv().get("EWALLET_ID"),
-            "keystore.jks",  System.getenv().get("KEYSTORE_ID"),
-            "ojdbc.properties",  System.getenv().get("OJDBC_ID"),
-            "sqlnet.ora",  System.getenv().get("SQLNET_ID"),
-            "tnsnames.ora",  System.getenv().get("TNSNAMES_ID"),
-            "truststore.jks", System.getenv().get("TRUSTSTORE_ID")
-    );
+    private final Map<String, String> walletFiles = Map.of("cwallet.sso", System.getenv().get("CWALLET_ID"),
+            "ewallet.p12", System.getenv().get("EWALLET_ID"), "keystore.jks", System.getenv().get("KEYSTORE_ID"),
+            "ojdbc.properties", System.getenv().get("OJDBC_ID"), "sqlnet.ora", System.getenv().get("SQLNET_ID"),
+            "tnsnames.ora", System.getenv().get("TNSNAMES_ID"), "truststore.jks", System.getenv().get("TRUSTSTORE_ID"));
 
     public WalletSecretFunction() {
         System.out.println("Setting up secrets client");
 
         String version = System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION");
         BasicAuthenticationDetailsProvider provider = null;
-        if( version != null ) {
+        if (version != null) {
             provider = ResourcePrincipalAuthenticationDetailsProvider.builder().build();
-        }
-        else {
+        } else {
             try {
                 provider = new ConfigFileAuthenticationDetailsProvider("~/.oci/config", "DEFAULT");
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -63,22 +56,31 @@ public class WalletSecretFunction {
         System.out.println("Secrets client set up");
     }
 
-    public String handleRequest() throws SQLException, JsonProcessingException {
+    public String handleRequest() {
+        String result = null;
         System.setProperty("oracle.jdbc.fanEnabled", "false");
-        if( !walletDir.exists() ) {
+        if (!walletDir.exists()) {
             System.out.println("Creating wallet...");
             createWallet(walletDir);
             System.out.println("Wallet created!");
         }
 
-        DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
-        Connection conn = DriverManager.getConnection(dbUrl,dbUser,dbPassword);
-        Statement statement = conn.createStatement();
-        ResultSet resultSet = statement.executeQuery("select * from employees");
-        List<HashMap<String, Object>> recordList = convertResultSetToList(resultSet);
-        String result = new ObjectMapper().writeValueAsString(recordList);
-        System.out.println(result);
-        conn.close();
+        try {
+            DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
+            Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+            Statement statement = conn.createStatement();
+            ResultSet resultSet = statement.executeQuery("select * from employees");
+            List<HashMap<String, Object>> recordList = convertResultSetToList(resultSet);
+            result = new ObjectMapper().writeValueAsString(recordList);
+            System.out.println(result);
+            conn.close();
+        } catch (JsonProcessingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         return result;
     }
 
