@@ -63,7 +63,7 @@ public class WalletSecretFunction {
         System.out.println("Secrets client set up");
     }
 
-    public List handleRequest() throws SQLException, JsonProcessingException {
+    public String handleRequest() throws SQLException, JsonProcessingException {
         System.setProperty("oracle.jdbc.fanEnabled", "false");
         if( !walletDir.exists() ) {
             System.out.println("Creating wallet...");
@@ -76,9 +76,10 @@ public class WalletSecretFunction {
         Statement statement = conn.createStatement();
         ResultSet resultSet = statement.executeQuery("select * from employees");
         List<HashMap<String, Object>> recordList = convertResultSetToList(resultSet);
-        System.out.println( new ObjectMapper().writeValueAsString(recordList) );
+        String result = new ObjectMapper().writeValueAsString(recordList);
+        System.out.println(result);
         conn.close();
-        return recordList;
+        return result;
     }
 
     private List<HashMap<String,Object>> convertResultSetToList(ResultSet rs) throws SQLException {
