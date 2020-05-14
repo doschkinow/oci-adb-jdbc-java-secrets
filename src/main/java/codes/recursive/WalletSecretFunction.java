@@ -1,6 +1,7 @@
 package codes.recursive;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
@@ -39,7 +40,7 @@ public class WalletSecretFunction {
     );
 
     public WalletSecretFunction() {
-        
+        System.out.println("Setting up secrets client");
 
         String version = System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION");
         BasicAuthenticationDetailsProvider provider = null;
@@ -59,12 +60,15 @@ public class WalletSecretFunction {
 
         String dbPasswordOcid = System.getenv().get("PASSWORD_ID");
         dbPassword = new String(getSecret(dbPasswordOcid));
+        System.out.println("Secrets client set up");
     }
 
     public List handleRequest() throws SQLException, JsonProcessingException {
         System.setProperty("oracle.jdbc.fanEnabled", "false");
         if( !walletDir.exists() ) {
+            System.out.println("Creating wallet...");
             createWallet(walletDir);
+            System.out.println("Wallet created!");
         }
 
         DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
@@ -72,6 +76,7 @@ public class WalletSecretFunction {
         Statement statement = conn.createStatement();
         ResultSet resultSet = statement.executeQuery("select * from employees");
         List<HashMap<String, Object>> recordList = convertResultSetToList(resultSet);
+        System.out.println( new ObjectMapper().writeValueAsString(recordList) );
         conn.close();
         return recordList;
     }
