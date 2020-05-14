@@ -56,8 +56,7 @@ public class WalletSecretFunction {
         System.out.println("Secrets client set up");
     }
 
-    public String handleRequest(String input) {
-        String result = null;
+    public String handleRequest(String input) throws IOException, JsonProcessingException, SQLException {
         System.setProperty("oracle.jdbc.fanEnabled", "false");
         if (!walletDir.exists()) {
             System.out.println("Creating wallet...");
@@ -65,76 +64,53 @@ public class WalletSecretFunction {
             System.out.println("Wallet created!");
         }
 
-        try {
-            DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
-            Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-            Statement statement = conn.createStatement();
-            ResultSet resultSet = statement.executeQuery("select * from employees");
-            List<HashMap<String, Object>> recordList = convertResultSetToList(resultSet);
-            result = new ObjectMapper().writeValueAsString(recordList);
-            System.out.println(result);
-            conn.close();
-        } catch (JsonProcessingException e) {
-            System.out.println("!!!!!!Exception: " + e.getMessage());
-            e.printStackTrace();
-        } catch (SQLException e) {
-            System.out.println("!!!!!!Exception: " + e.getMessage());
-            e.printStackTrace();
-        }
+        DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
+        Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+        Statement statement = conn.createStatement();
+        ResultSet resultSet = statement.executeQuery("select * from employees");
+        List<HashMap<String, Object>> recordList = convertResultSetToList(resultSet);
+        String result = new ObjectMapper().writeValueAsString(recordList);
+        System.out.println(result);
+        conn.close();
+
         return result;
     }
 
-    private List<HashMap<String,Object>> convertResultSetToList(ResultSet rs) throws SQLException {
+    private List<HashMap<String, Object>> convertResultSetToList(ResultSet rs) throws SQLException {
         ResultSetMetaData md = rs.getMetaData();
         int columns = md.getColumnCount();
-        List<HashMap<String,Object>> list = new ArrayList<HashMap<String,Object>>();
+        List<HashMap<String, Object>> list = new ArrayList<HashMap<String, Object>>();
         while (rs.next()) {
-            HashMap<String,Object> row = new HashMap<String, Object>(columns);
-            for(int i=1; i<=columns; ++i) {
-                row.put(md.getColumnName(i),rs.getObject(i));
+            HashMap<String, Object> row = new HashMap<String, Object>(columns);
+            for (int i = 1; i <= columns; ++i) {
+                row.put(md.getColumnName(i), rs.getObject(i));
             }
             list.add(row);
         }
         return list;
     }
 
-    private void createWallet(File walletDir) {
+    private void createWallet(File walletDir) throws IOException {
         walletDir.mkdirs();
         for (String key : walletFiles.keySet()) {
-            try {
-                writeWalletFile(key);
-            }
-            catch (IOException e) {
-                walletDir.delete();
-                e.printStackTrace();
-            }
+            writeWalletFile(key);
         }
     }
 
     private void writeWalletFile(String key) throws IOException {
         String secretOcid = walletFiles.get(key);
         byte[] secretValueDecoded = getSecret(secretOcid);
-        try {
-            File walletFile = new File(walletDir + "/" + key);
-            FileUtils.writeByteArrayToFile(walletFile, secretValueDecoded);
-            System.out.println("Stored wallet file: " + walletFile.getAbsolutePath());
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+        File walletFile = new File(walletDir + "/" + key);
+        FileUtils.writeByteArrayToFile(walletFile, secretValueDecoded);
+        System.out.println("Stored wallet file: " + walletFile.getAbsolutePath());
     }
 
     private byte[] getSecret(String secretOcid) {
-        GetSecretBundleRequest getSecretBundleRequest = GetSecretBundleRequest
-                .builder()
-                .secretId(secretOcid)
-                .stage(GetSecretBundleRequest.Stage.Current)
-                .build();
-        GetSecretBundleResponse getSecretBundleResponse = secretsClient
-                .getSecretBundle(getSecretBundleRequest);
-        Base64SecretBundleContentDetails base64SecretBundleContentDetails =
-                (Base64SecretBundleContentDetails) getSecretBundleResponse.
-                        getSecretBundle().getSecretBundleContent();
+        GetSecretBundleRequest getSecretBundleRequest = GetSecretBundleRequest.builder().secretId(secretOcid)
+                .stage(GetSecretBundleRequest.Stage.Current).build();
+        GetSecretBundleResponse getSecretBundleResponse = secretsClient.getSecretBundle(getSecretBundleRequest);
+        Base64SecretBundleContentDetails base64SecretBundleContentDetails = (Base64SecretBundleContentDetails) getSecretBundleResponse
+                .getSecretBundle().getSecretBundleContent();
         byte[] secretValueDecoded = Base64.decodeBase64(base64SecretBundleContentDetails.getContent());
         return secretValueDecoded;
     }
