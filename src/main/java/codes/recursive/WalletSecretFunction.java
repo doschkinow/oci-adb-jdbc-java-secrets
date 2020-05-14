@@ -39,10 +39,8 @@ public class WalletSecretFunction {
     );
 
     public WalletSecretFunction() {
-        System.out.println("******************************Environment Vars*****************************");
-        Map<String, String> enviorntmentVars  = System.getenv();
-        enviorntmentVars.entrySet().forEach(System.out::println);
         
+
         String version = System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION");
         BasicAuthenticationDetailsProvider provider = null;
         if( version != null ) {
@@ -57,7 +55,7 @@ public class WalletSecretFunction {
             }
         }
         secretsClient = new SecretsClient(provider);
-        secretsClient.setRegion(Region.US_PHOENIX_1);
+        secretsClient.setRegion(Region.EU_FRANKFURT_1);
 
         String dbPasswordOcid = System.getenv().get("PASSWORD_ID");
         dbPassword = new String(getSecret(dbPasswordOcid));
