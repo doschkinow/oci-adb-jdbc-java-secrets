@@ -56,7 +56,7 @@ public class WalletSecretFunction {
         System.out.println("Secrets client set up");
     }
 
-    public String handleRequest() {
+    public String handleRequest(String input) {
         String result = null;
         System.setProperty("oracle.jdbc.fanEnabled", "false");
         if (!walletDir.exists()) {
@@ -75,10 +75,10 @@ public class WalletSecretFunction {
             System.out.println(result);
             conn.close();
         } catch (JsonProcessingException e) {
-            // TODO Auto-generated catch block
+            System.out.println("!!!!!!Exception: " + e.getMessage());
             e.printStackTrace();
         } catch (SQLException e) {
-            // TODO Auto-generated catch block
+            System.out.println("!!!!!!Exception: " + e.getMessage());
             e.printStackTrace();
         }
         return result;
