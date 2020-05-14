@@ -56,7 +56,7 @@ public class WalletSecretFunction {
         System.out.println("Secrets client set up");
     }
 
-    public String handleRequest(String input) throws IOException, JsonProcessingException, SQLException {
+    public String handleRequest() throws IOException, JsonProcessingException, SQLException {
         System.setProperty("oracle.jdbc.fanEnabled", "false");
         if (!walletDir.exists()) {
             System.out.println("Creating wallet...");
